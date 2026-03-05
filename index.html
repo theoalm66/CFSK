@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CFSK-Protocol V1.0 | Innovation 2026</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --light-blue: #eaf4fd;
+            --mid-blue: #82b1ff;
+            --text-dark: #2c3e50;
+            --text-light: #596a7b;
+            --bg-white: #ffffff;
+            --accent-cyan: #00bcd4;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            background-color: #f8fbfd;
+            transition: background-color 0.3s ease;
+        }
+
+        /* --- LANGUAGE SWITCHER LOGIC (FIXED) --- */
+        /* Nur Inhaltselemente mit Sprachklassen ausblenden; body bleibt sichtbar */
+        body [class~="lang-de"],
+        body [class~="lang-en"],
+        body [class~="lang-es"] {
+            display: none;
+        }
+
+        body.lang-de [class~="lang-de"] { display: block; }
+        body.lang-en [class~="lang-en"] { display: block; }
+        body.lang-es [class~="lang-es"] { display: block; }
+
+        /* Inline-Elemente (z.B. span) korrekt behandeln */
+        body.lang-de span.lang-de,
+        body.lang-en span.lang-en,
+        body.lang-es span.lang-es {
+            display: inline;
+        }
+
+        /* Listenelemente korrekt behandeln */
+        body.lang-de li.lang-de,
+        body.lang-en li.lang-en,
+        body.lang-es li.lang-es {
+            display: list-item;
+        }
+
+        .lang-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            z-index: 10;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover,
+        .lang-btn.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* --- LAYOUT STYLES --- */
+        header {
+            position: relative;
+            background: linear-gradient(135deg, var(--light-blue) 0%, #d4e8fa 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            color: var(--primary-blue);
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            color: var(--primary-blue);
+            border-bottom: 2px solid var(--mid-blue);
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+        }
+
+        h3 { color: var(--text-dark); }
+
+        .hero-text {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            max-width: 800px;
+            margin: 1.5rem auto;
+            font-weight: 500;
+        }
+
+        .definition-box {
+            background: var(--bg-white);
+            padding: 2rem;
+            border-left: 5px solid var(--primary-blue);
+            margin: 2rem 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .math-block {
+            background: #f4f6f8;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1.05rem;
+            color: var(--primary-blue);
+            text-align: center;
+            border-radius: 8px;
+            border: 1px solid #cddde8;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .canvas-container {
+            background: var(--bg-white);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 800px;
+            height: 250px;
+            background: #0a192f;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: var(--bg-white);
+            padding: 1.5rem;
+            border: 1px solid #e0e8f0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        /* Bild / Platzhalter */
+        .diagram-placeholder {
+            display: block;
+            width: 100%;
+            max-width: 600px;
+            min-height: 120px;
+            margin: 2rem auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: #eaf4fd;
+            border: 1px dashed #82b1ff;
+            object-fit: contain;
+        }
+
+        /* Falls Bilddatei fehlt, sichtbar halten */
+        img.diagram-placeholder {
+            padding: 0.75rem;
+            background:
+                linear-gradient(#eaf4fd, #eaf4fd) padding-box,
+                repeating-linear-gradient(
+                    45deg,
+                    #eaf4fd,
+                    #eaf4fd 10px,
+                    #dbeeff 10px,
+                    #dbeeff 20px
+                ) border-box;
+        }
+
+        .accordion {
+            background-color: var(--primary-blue);
+            color: white;
+            cursor: pointer;
+            padding: 1.2rem;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: 0.3s;
+            border-radius: 5px;
+            margin-top: 0.5rem;
+        }
+
+        .accordion:hover { background-color: #003d82; }
+
+        .accordion.active {
+            background-color: #003d82;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .panel {
+            padding: 0 1.2rem;
+            background-color: var(--bg-white);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            border-left: 2px solid var(--primary-blue);
+            border-right: 2px solid var(--primary-blue);
+            border-bottom: 2px solid var(--primary-blue);
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        .panel-content { padding: 1rem 0; }
+
+        footer {
+            background: var(--text-dark);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--primary-blue);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding-top: 5.5rem;
+            }
+            .lang-selector {
+                top: 10px;
+                right: 10px;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .math-block {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body class="lang-de">
+
+<header>
+    <div class="lang-selector">
+        <button class="lang-btn active" onclick="setLang('de')" id="btn-de" type="button">DE</button>
+        <button class="lang-btn" onclick="setLang('en')" id="btn-en" type="button">EN</button>
+        <button class="lang-btn" onclick="setLang('es')" id="btn-es" type="button">ES</button>
+    </div>
+
+    <div class="badge">RELEASE 2026</div>
+    <h1>CFSK-Protocol V1.0</h1>
+    <p class="hero-text">
+        <span class="lang-de">„CFSK ist ein stochastisches Modulationsverfahren für die Low-Energy-Kommunikation. Es nutzt die mathematische Kohärenz von Kettenbruch-Algorithmen (Continued Fractions), um Daten deterministisch unterhalb des Rauschens zu kodieren.“</span>
+        <span class="lang-en">"CFSK is a stochastic modulation method for low-energy communication. It utilizes the mathematical coherence of continued fraction algorithms to deterministically encode data beneath the noise floor."</span>
+        <span class="lang-es">"CFSK es un método de modulación estocástica para comunicaciones de baja energía. Utiliza la coherencia matemática de algoritmos de fracciones continuas para codificar datos de forma determinista por debajo del nivel de ruido."</span>
+    </p>
+</header>
+
+<div class="container">
+    <section>
+        <h2 class="lang-de">Die CFSK-Nomenklatur</h2>
+        <h2 class="lang-en">The CFSK Nomenclature</h2>
+        <h2 class="lang-es">La Nomenclatura CFSK</h2>
+        
+        <div class="grid">
+            <div class="card">
+                <h3 style="color: var(--primary-blue);">C (Continued Fraction)</h3>
+                <p class="lang-de">Die mathematische Begründung. Die Nutzung logarithmischer Kettenbrüche als hochpräzise Filter zur Informationsdarstellung im Chaos.</p>
+                <p class="lang-en">The mathematical foundation. The use of logarithmic continued fractions as high-precision filters for information representation within chaos.</p>
+                <p class="lang-es">El fundamento matemático. El uso de fracciones continuas logarítmicas como filtros de alta precisión para la representación de información dentro del caos.</p>
+            </div>
+            <div class="card">
+                <h3 style="color: var(--primary-blue);">F (Fractional / Frequency)</h3>
+                <p class="lang-de">Bezieht sich auf die fraktale Einbettung im Frequenzraum, welche die Skaleninvarianz des Signals ermöglicht.</p>
+                <p class="lang-en">Refers to the fractal embedding in the frequency domain, enabling the scale invariance of the signal.</p>
+                <p class="lang-es">Se refiere a la incrustación fractal en el dominio de la frecuencia, permitiendo la invariancia de escala de la señal.</p>
+            </div>
+            <div class="card">
+                <h3 style="color: var(--primary-blue);">SK (Shift Keying)</h3>
+                <p class="lang-de">Das Verfahren, Information durch gezielte Wechsel der mathematischen Signatur zu übertragen.</p>
+                <p class="lang-en">The method of transmitting information through targeted shifts of the mathematical signature.</p>
+                <p class="lang-es">El método de transmisión de información a través de cambios específicos en la firma matemática.</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2 class="lang-de">Interaktive Prozess-Visualisierung</h2>
+        <h2 class="lang-en">Interactive Process Visualization</h2>
+        <h2 class="lang-es">Visualización Interactiva del Proceso</h2>
+        
+        <p class="lang-de">Beobachten Sie, wie strukturierte Daten in einem Rauschteppich verborgen und anschließend durch die CFSK-Logik wieder exakt extrahiert werden.</p>
+        <p class="lang-en">Observe how structured data is hidden within a noise floor and subsequently extracted with absolute precision using CFSK logic.</p>
+        <p class="lang-es">Observe cómo los datos estructurados se ocultan dentro de un umbral de ruido y luego se extraen con precisión absoluta utilizando la lógica CFSK.</p>
+        
+        <div class="canvas-container">
+            <canvas id="cfskCanvas" width="800" height="250"></canvas>
+            <p style="font-size: 0.9rem; color: var(--text-light); margin-top: 10px;">
+                <span class="lang-de">Phase 1: Nutzsignal &rarr; Phase 2: Stochastische Kodierung (Rauschen) &rarr; Phase 3: Deterministische Dekodierung</span>
+                <span class="lang-en">Phase 1: Payload Signal &rarr; Phase 2: Stochastic Encoding (Noise) &rarr; Phase 3: Deterministic Decoding</span>
+                <span class="lang-es">Fase 1: Señal Útil &rarr; Fase 2: Codificación Estocástica (Ruido) &rarr; Fase 3: Decodificación Determinista</span>
+            </p>
+        </div>
+    </section>
+
+    <section>
+        <h2 class="lang-de">Mathematisches Fundament & Quantensprung</h2>
+        <h2 class="lang-en">Mathematical Foundation & Quantum Leap</h2>
+        <h2 class="lang-es">Fundamento Matemático y Salto Cuántico</h2>
+        
+        <p class="lang-de">Das Prinzip der logarithmischen Kodierung basiert auf der Übertragung von Zuständen in einen Kettenbruchraum. Diese Transformation ermöglicht es, Daten in scheinbar chaotischen Rauschstrukturen unterzubringen, die zu 100% deterministisch dekodierbar sind.</p>
+        <p class="lang-en">The principle of logarithmic encoding is based on mapping states into a continued fraction space. This transformation allows data to be embedded in seemingly chaotic noise structures that are 100% deterministically decodable.</p>
+        <p class="lang-es">El principio de la codificación logarítmica se basa en la transferencia de estados a un espacio de fracciones continuas. Esta transformación permite integrar datos en estructuras de ruido aparentemente caóticas que son 100% decodificables de manera determinista.</p>
+        
+        <img src="diagram_log_coding.png" alt="Logarithmic Coding Diagram" class="diagram-placeholder" onerror="this.alt='Diagramm fehlt'; this.title='diagram_log_coding.png nicht gefunden';">
+        
+        <p class="lang-de">Die zugrundeliegende mathematische Kettenbruch-Darstellung:</p>
+        <p class="lang-en">The underlying mathematical continued fraction representation:</p>
+        <p class="lang-es">La representación matemática subyacente de la fracción continua:</p>
+        
+        <div class="math-block">
+            ln(f/f0) = n0/z + z/(n1 + z/(n2 + ... + z/nk)) = [z, n0; n1, n2, ..., nk]
+        </div>
+
+        <p class="lang-de">Mit der Einführung von mehrdimensionalen Phasen/Kanälen und unserer <strong>O(1) Turbo-Vektor-Berechnung</strong> haben wir einen Quantensprung in der Informationsverdichtung erreicht. Berechnungen erfolgen in Echtzeit über vorberechnete Matrizen.</p>
+        <p class="lang-en">With the introduction of multi-dimensional phases/channels and our <strong>O(1) Turbo-Vector Calculation</strong>, we have achieved a quantum leap in information density. Computations are handled in real-time via pre-calculated matrices.</p>
+        <p class="lang-es">Con la introducción de fases/canales multidimensionales y nuestro <strong>Cálculo Turbo-Vectorial O(1)</strong>, hemos logrado un salto cuántico en la densidad de información. Los cálculos se procesan en tiempo real mediante matrices precalculadas.</p>
+        
+        <img src="diagram_turbo_matrix.png" alt="O(1) Turbo Vector Matrix Diagram" class="diagram-placeholder" onerror="this.alt='Diagramm fehlt'; this.title='diagram_turbo_matrix.png nicht gefunden';">
+    </section>
+
+    <section>
+        <h2 class="lang-de">Aktuelle Implementierungen</h2>
+        <h2 class="lang-en">Current Implementations</h2>
+        <h2 class="lang-es">Implementaciones Actuales</h2>
+
+        <div class="definition-box">
+            <h3 class="lang-de">GS-AUDIO-STEGANOGRAFIE PRO (GUI & AUTO-EXTENSION EDITION)</h3>
+            <h3 class="lang-en">GS-AUDIO-STEGANOGRAPHY PRO (GUI & AUTO-EXTENSION EDITION)</h3>
+            <h3 class="lang-es">ESTEGANOGRAFÍA DE AUDIO GS PRO (GUI Y EDICIÓN DE AUTO-EXTENSIÓN)</h3>
+            <ul class="lang-de">
+                <li><strong>256-QAM</strong> (8 Bits pro Sample) Vektor-Turbo.</li>
+                <li><strong>AES-256</strong> Verschlüsselung (Optional).</li>
+                <li>Automatischer Metadaten-Header zur Endungswiederherstellung.</li>
+            </ul>
+            <ul class="lang-en">
+                <li><strong>256-QAM</strong> (8 Bits per Sample) Vector-Turbo.</li>
+                <li><strong>AES-256</strong> Encryption (Optional).</li>
+                <li>Automatic metadata header for extension recovery.</li>
+            </ul>
+            <ul class="lang-es">
+                <li><strong>256-QAM</strong> (8 Bits por Muestra) Vector-Turbo.</li>
+                <li>Cifrado <strong>AES-256</strong> (Opcional).</li>
+                <li>Encabezado de metadatos automático para recuperación de extensiones.</li>
+            </ul>
+        </div>
+        
+        <div class="definition-box" style="border-left-color: var(--accent-cyan);">
+            <h3 class="lang-de">GS-AUDIO-STEGANOGRAFIE (5D RAW - CRYSTAL CLEAR 7-BIT EDITION)</h3>
+            <h3 class="lang-en">GS-AUDIO-STEGANOGRAPHY (5D RAW - CRYSTAL CLEAR 7-BIT EDITION)</h3>
+            <h3 class="lang-es">ESTEGANOGRAFÍA DE AUDIO GS (5D RAW - EDICIÓN 7-BIT CRYSTAL CLEAR)</h3>
+            
+            <p class="lang-de">In Anlehnung an die Technik der Holographie haben wir eine experimentelle Version geschaffen:</p>
+            <p class="lang-en">Drawing inspiration from holographic techniques, we created an experimental version:</p>
+            <p class="lang-es">Inspirándonos en técnicas holográficas, creamos una versión experimental:</p>
+            
+            <ul class="lang-de">
+                <li><strong>0 Fehlende Zustände!</strong> 100% Bit-Genauigkeit, absolut kein Rauschen nach der Dekodierung.</li>
+                <li>Automatischer Payload-Header repariert Mono/Stereo und Pitch.</li>
+                <li>Inklusive entsprechender O(1) Turbo-Vektor-Berechnung.</li>
+            </ul>
+            <ul class="lang-en">
+                <li><strong>0 Missing States!</strong> 100% bit accuracy, absolutely no noise after decoding.</li>
+                <li>Automatic payload header repairs Mono/Stereo and Pitch.</li>
+                <li>Includes corresponding O(1) Turbo-Vector Calculation.</li>
+            </ul>
+            <ul class="lang-es">
+                <li><strong>¡0 Estados Perdidos!</strong> Precisión de bits del 100%, absolutamente sin ruido después de la decodificación.</li>
+                <li>El encabezado automático de carga útil repara Mono/Estéreo y Tono.</li>
+                <li>Incluye el cálculo Turbo-Vectorial O(1) correspondiente.</li>
+            </ul>
+        </div>
+
+
+<img src="diagram_5d_spheres.png" alt="5D RAW Holographic Spheres Diagram" class="diagram-placeholder" style="max-width: 400px; height: auto;" onerror="this.alt='Diagramm fehlt'; this.title='diagram_5d_spheres.png nicht gefunden';">
+
+    </section>
+
+    <section>
+        <h2 class="lang-de">Anwendungsgebiete (Use Cases)</h2>
+        <h2 class="lang-en">Applications (Use Cases)</h2>
+        <h2 class="lang-es">Áreas de Aplicación (Casos de Uso)</h2>
+        
+        <p class="lang-de">Überall wo Rauschen ein klassisches Problem darstellt, macht CFSK es zur <strong>Lösung</strong>.</p>
+        <p class="lang-en">Wherever noise poses a traditional problem, CFSK turns it into the <strong>solution</strong>.</p>
+        <p class="lang-es">Dondequiera que el ruido represente un problema tradicional, CFSK lo convierte en la <strong>solución</strong>.</p>
+
+        <button class="accordion" type="button">
+            <span class="lang-de">KOMMUNIKATION</span>
+            <span class="lang-en">COMMUNICATION</span>
+            <span class="lang-es">COMUNICACIÓN</span>
+        </button>
+        <div class="panel">
+            <div class="panel-content">
+                <h4 class="lang-de">1. Weltraum & Satellitenkommunikation (Deep Space)</h4>
+                <h4 class="lang-en">1. Space & Satellite Communication (Deep Space)</h4>
+                <h4 class="lang-es">1. Comunicación Espacial y por Satélite (Deep Space)</h4>
+                <p class="lang-de"><strong>Problem:</strong> Extrem schwaches SNR (&lt; 0 dB).<br><strong>Lösung:</strong> Das Signal IST das Rauschen. Der Empfänger wertet lediglich das fraktale Muster aus.</p>
+                <p class="lang-en"><strong>Problem:</strong> Extremely weak SNR (&lt; 0 dB).<br><strong>Solution:</strong> The signal IS the noise. The receiver merely evaluates the fractal pattern.</p>
+                <p class="lang-es"><strong>Problema:</strong> SNR extremadamente débil (&lt; 0 dB).<br><strong>Solución:</strong> La señal ES el ruido. El receptor simplemente evalúa el patrón fractal.</p>
+                
+                <h4 class="lang-de">2. IoT & Edge Computing (Ultra-Low-Power)</h4>
+                <h4 class="lang-en">2. IoT & Edge Computing (Ultra-Low-Power)</h4>
+                <h4 class="lang-es">2. IoT y Edge Computing (Ultra-Low-Power)</h4>
+                <p class="lang-de">Millionen Sensoren senden interferenzfrei im selben Band. Jeder nutzt seine eigene CFSK-Signatur.</p>
+                <p class="lang-en">Millions of sensors transmit interference-free in the same band. Each uses its own CFSK signature.</p>
+                <p class="lang-es">Millones de sensores transmiten sin interferencias en la misma banda. Cada uno usa su propia firma CFSK.</p>
+            </div>
+        </div>
+
+        <button class="accordion" type="button">
+            <span class="lang-de">SICHERHEIT & KRYPTOGRAPHIE</span>
+            <span class="lang-en">SECURITY & CRYPTOGRAPHY</span>
+            <span class="lang-es">SEGURIDAD Y CRIPTOGRAFÍA</span>
+        </button>
+        <div class="panel">
+            <div class="panel-content">
+                <h4 class="lang-de">3. Steganographische Verschlüsselung</h4>
+                <h4 class="lang-en">3. Steganographic Encryption</h4>
+                <h4 class="lang-es">3. Cifrado Esteganográfico</h4>
+                <p class="lang-de">Bietet "Plausible Deniability", da kein Signal erkennbar ist. Nachrichten verschwinden im Hintergrundrauschen.</p>
+                <p class="lang-en">Provides "Plausible Deniability" as no signal is detectable. Messages vanish into background noise.</p>
+                <p class="lang-es">Proporciona "Plausible Deniability" ya que no se detecta ninguna señal. Los mensajes desaparecen en el ruido de fondo.</p>
+                
+                <h4 class="lang-de">4. LPI Radar & Sonar</h4>
+                <h4 class="lang-en">4. LPI Radar & Sonar</h4>
+                <h4 class="lang-es">4. Radar y Sonar LPI</h4>
+                <p class="lang-de">Low Probability of Intercept: Das Radar-Signal sieht aus wie atmosphärisches Rauschen.</p>
+                <p class="lang-en">Low Probability of Intercept: The radar signal appears as atmospheric noise.</p>
+                <p class="lang-es">Low Probability of Intercept: La señal de radar parece ruido atmosférico.</p>
+            </div>
+        </div>
+
+        <button class="accordion" type="button">
+            <span class="lang-de">WISSENSCHAFT, COMPUTING & MEDIZIN</span>
+            <span class="lang-en">SCIENCE, COMPUTING & MEDICINE</span>
+            <span class="lang-es">CIENCIA, INFORMÁTICA Y MEDICINA</span>
+        </button>
+        <div class="panel">
+            <div class="panel-content">
+                <p class="lang-de"><strong>5. Astrophysik:</strong> Analyse kosmischen Rauschens auf extraterrestrische CFSK-Strukturen (SETI).<br>
+                <strong>6. Neuromorphes Computing:</strong> Information liegt bereits in der Rauschstruktur (Stochastic Computing).<br>
+                <strong>7. Post-Quantum Crypto:</strong> Physikalische Zusatzschicht, die nicht gehackt werden kann.<br>
+                <strong>8. Medizin & Finanzen:</strong> Unhörbare Wasserzeichen, strahlungsarme Implantate und Covert-Trading-Signale.</p>
+                
+                <p class="lang-en"><strong>5. Astrophysics:</strong> Analyzing cosmic noise for extraterrestrial CFSK structures (SETI).<br>
+                <strong>6. Neuromorphic Computing:</strong> Information is native to the noise structure (Stochastic Computing).<br>
+                <strong>7. Post-Quantum Crypto:</strong> Physical additional layer that resists hacking.<br>
+                <strong>8. Medicine & Finance:</strong> Inaudible watermarks, ultra-low radiation implants, and covert trading signals.</p>
+
+                <p class="lang-es"><strong>5. Astrofísica:</strong> Análisis de ruido cósmico en busca de estructuras CFSK extraterrestres (SETI).<br>
+                <strong>6. Computación Neuromórfica:</strong> La información es nativa de la estructura del ruido (Stochastic Computing).<br>
+                <strong>7. Post-Quantum Crypto:</strong> Capa física adicional que resiste el hackeo.<br>
+                <strong>8. Medicina y Finanzas:</strong> Marcas de agua inaudibles, implantes de radiación ultrabaja y señales de trading encubiertas.</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<footer>
+    <p class="lang-de">&copy; 2026 CFSK Protocol Initiative | Information Hidden in Plain Noise</p>
+    <p class="lang-en">&copy; 2026 CFSK Protocol Initiative | Information Hidden in Plain Noise</p>
+    <p class="lang-es">&copy; 2026 CFSK Protocol Initiative | Información Oculta en Pleno Ruido</p>
+</footer>
+
+<script>
+    // --- LANGUAGE SWITCHER JS ---
+    let currentLang = 'de';
+
+    function setLang(lang) {
+        document.body.className = 'lang-' + lang;
+        currentLang = lang;
+
+        document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById('btn-' + lang);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        // Accordions nach Sprachwechsel neu berechnen (falls geöffnet)
+        document.querySelectorAll('.accordion').forEach(btn => {
+            const panel = btn.nextElementSibling;
+            if (btn.classList.contains('active') && panel) {
+                panel.style.maxHeight = panel.scrollHeight + 'px';
+            }
+        });
+    }
+
+    // --- ACCORDION LOGIC ---
+    document.querySelectorAll('.accordion').forEach(button => {
+        button.addEventListener('click', function () {
+            this.classList.toggle('active');
+            const panel = this.nextElementSibling;
+            if (!panel) return;
+
+            if (panel.style.maxHeight) {
+                panel.style.maxHeight = null;
+            } else {
+                panel.style.maxHeight = panel.scrollHeight + 'px';
+            }
+        });
+    });
+
+    // --- CANVAS ANIMATION ---
+    const canvas = document.getElementById("cfskCanvas");
+
+    if (canvas) {
+        const ctx = canvas.getContext("2d");
+        let frame = 0;
+
+        function resizeCanvasForHiDPI() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            const displayWidth = Math.max(1, Math.floor(rect.width));
+            const displayHeight = Math.max(1, Math.floor(rect.height));
+
+            if (canvas.width !== Math.floor(displayWidth * dpr) || canvas.height !== Math.floor(displayHeight * dpr)) {
+                canvas.width = Math.floor(displayWidth * dpr);
+                canvas.height = Math.floor(displayHeight * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+        }
+
+        function drawAnimation() {
+            resizeCanvasForHiDPI();
+
+            const w = canvas.getBoundingClientRect().width;
+            const h = canvas.getBoundingClientRect().height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Hintergrund
+            ctx.fillStyle = "#0a192f";
+            ctx.fillRect(0, 0, w, h);
+
+            // Raster
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 0; i < w; i += 50) { ctx.moveTo(i, 0); ctx.lineTo(i, h); }
+            for (let i = 0; i < h; i += 50) { ctx.moveTo(0, i); ctx.lineTo(w, i); }
+            ctx.stroke();
+
+            const x1 = w * 0.31;
+            const x2 = w * 0.69;
+            const midY = h * 0.5;
+
+            // Segmentiert zeichnen (wichtig, damit Farben pro Abschnitt korrekt sind)
+            function drawSegment(xStart, xEnd, color, amplitude, noiseAmp, hiddenAmp) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let x = Math.floor(xStart); x < Math.floor(xEnd); x++) {
+                    let y = midY;
+                    const wave = Math.sin((x + frame) * 0.05) * amplitude;
+                    const noise = noiseAmp ? (Math.random() - 0.5) * noiseAmp : 0;
+                    const hidden = hiddenAmp ? Math.sin((x + frame) * 0.05) * hiddenAmp : 0;
+                    y += wave + noise + hidden;
+
+                    if (x === Math.floor(xStart)) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // Phase 1: Nutzsignal
+            drawSegment(0, x1, "#00bcd4", 35, 0, 0);
+
+            // Phase 2: Rauschen + verstecktes Signal
+            drawSegment(x1, x2, "#82b1ff", 0, 90, 5);
+
+            // Phase 3: Rekonstruiertes Signal
+            drawSegment(x2, w, "#00ff88", 35, 0, 0);
+
+            // Trennlinien
+            ctx.strokeStyle = "rgba(255,255,255,0.25)";
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(x1, 0); ctx.lineTo(x1, h);
+            ctx.moveTo(x2, 0); ctx.lineTo(x2, h);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Overlay Text abhängig von der Sprache
+            ctx.fillStyle = "white";
+            ctx.font = "bold 14px Arial";
+
+            let txt1, txt2, txt3;
+            if (currentLang === 'de') {
+                txt1 = "Ausgabe 100% deterministisch";
+                txt2 = "CFSK Stochastischer Raum";
+                txt3 = "Input Daten";
+            } else if (currentLang === 'en') {
+                txt1 = "100% Deterministic Output";
+                txt2 = "CFSK Stochastic Space";
+                txt3 = "Data Input";
+            } else {
+                txt1 = "Salida de Datos 100% determinista";
+                txt2 = "Espacio Estocástico CFSK";
+                txt3 = "Entrada de Datos";
+            }
+
+            ctx.fillText(txt1, 20, h - 20);
+            ctx.fillText(txt2, x1 + 15, h - 20);
+            ctx.fillText(txt3, x2 + 15, h - 20);
+
+            frame += 2;
+            requestAnimationFrame(drawAnimation);
+        }
+
+        drawAnimation();
+        window.addEventListener('resize', () => {
+            // Höhe via CSS fix, Breite responsive – nur neu zeichnen reicht
+        });
+    }
+</script>
+
+</body>
+</html>
